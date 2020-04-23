@@ -25,3 +25,7 @@ sound.export(dst, format = "wav")
 
 #perform audio feature extraction using ShortTermFeatures: output: csv file with song id and numeric values for 34 audio features
 
+#there should be two variants of feature extraction (in two separate scripts): one that uses frame size of 500 msec (sampling rate of 2 Hz) and feature extraction per song level - using entire song (45 sec) as a frame size
+
+#in the first variant there will be one csv file per song with columns that correspond to features and rows to windows
+#in the second script the output will be one csv file for features as columns and rows as songs
