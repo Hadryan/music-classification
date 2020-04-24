@@ -10,20 +10,57 @@ from pyAudioAnalysis import audioBasicIO
 from pyAudioAnalysis import audioAnalysis
 from pyAudioAnalysis import ShortTermFeatures
 from pydub import AudioSegment
+import os
+import numpy as np
 
 #if there is error with audio library path to ffmpeg needs to be explicitly defined
-#AudioSegment.converter = r"C:\\Users\\kaytee\\Documents\\Installation Programs\\ffmpeg-20200417-889ad93-win64-static\\ffmpeg-20200417-889ad93-win64-static\\bin\\ffmpeg.exe"
+#AudioSegment.converter = r"C:\\Users\\jorda\Documents\\Python\\ffmpeg-4.2.2-win64-static\\bin\\ffmpeg.exe"
 
 # 1st step - convert files from mp3 to wav, example for one song below
 src = "2.mp3"
 dst = "2.wav"
+mp3_dir = "dataset//DEAM_audio//MEMD_audio"
+wav_dir = "dataset//DEAM_audio//wav_audio"
+csv_dir = "dataset//extracted_features"
+
+#check if the directories are already there
+if not os.path.exists(wav_dir):
+    os.mkdir(wav_dir)
+if not os.path.exists(csv_dir):
+    os.mkdir(csv_dir)
 
 # convert mp3 to wav
+with os.scandir(mp3_dir) as dir:
+    for entry in dir:
+        if entry.is_file() and entry.name.endswith(".mp3"):
+            song_id = entry.name.rstrip(".mp3")
+            if not os.path.exists(wav_dir + song_id + ".wav"):
+                sound = AudioSegment.from_mp3(src)
+                sound.export(wav_dir + "//" + song_id + ".wav", format="wav")
+                print("created " + song_id + ".wav")
 
-sound = AudioSegment.from_mp3(src)
-sound.export(dst, format = "wav")
 
-#perform audio feature extraction using ShortTermFeatures: output: csv file with song id and numeric values for 34 audio features
+song_size = 45
+window_size = 500e-3
+
+#perform audio feature extraction using ShortTermFeatures:
+#output: a csv file for each song where the title is the song ID, columns correspond to features and rows to windows
+with os.scandir(wav_dir) as dir:
+    for entry in dir:
+        if entry.is_file() and entry.name.endswith(".wav"):
+            sample_rate, signal = audioBasicIO.read_audio_file(dst)
+            features_and_deltas, feature_names = ShortTermFeatures.feature_extraction(signal, 2, window_size, window_size) #TODO: make this work
+            features = np.transpose(features_and_deltas[:34,:])
+
+            song_id = entry.name.rstrip(".wav")
+            np.savetxt(fname=song_id+'.wav', X=features, encoding='UTF-8')
+            #song can be loaded into an np array named loaded_array with
+            #loaded_array = np.loadtxt(fname=csv_dir + song_id + '.csv',  encoding='UTF-8')
+
+
+#print(signal.shape)
+
+
 
 #there should be two variants of feature extraction (in two separate scripts): one that uses frame size of 500 msec (sampling rate of 2 Hz) and feature extraction per song level - using entire song (45 sec) as a frame size
 
