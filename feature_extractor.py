@@ -40,6 +40,7 @@ with os.scandir(mp3_dir) as dir:
                 print("created " + song_id + ".wav")
 
 
+#these should be in msec not sec               
 song_size = 45
 window_size = 500e-3
 
@@ -50,8 +51,11 @@ with os.scandir(wav_dir) as dir:
         if song.is_file() and song.name.endswith(".wav"):
             # this code works for diarizationExample.wav file, so there must be something wrong with the converted wav files
             # replacing 'diarizationExample.wav' with '2.wav' in the example.py program causes it to fail, so I think you're onto something
+            #try to use functions from pyAudioAnalysis/audioBasicIO to convert from mp3 to wav using specific sampling rate, or to change the sampling rate in wav file
             sample_rate, signal = audioBasicIO.read_audio_file("diarizationExample.wav")
             #sample_rate, signal = audioBasicIO.read_audio_file(dst)
+            #sample rate retrieved from read audio file is different that sample rate used as a second arg in feature extraction
+            # sample rate should be in Hz, not kHz: 2 -> 2000 if you use it explicitly
             features_and_deltas, feature_names = ShortTermFeatures.feature_extraction(signal, 2, window_size, window_size) #TODO: make this work
             features = np.transpose(features_and_deltas[:34,:])
 
