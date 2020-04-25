@@ -21,7 +21,7 @@ src = "2.mp3"
 dst = "2.wav"
 mp3_dir = "dataset//DEAM_audio//MEMD_audio"
 wav_dir = "dataset//DEAM_audio//wav_audio"
-csv_dir = "dataset//extracted_features"
+csv_dir = "dataset//extracted_features//sampling"
 
 #check if the directories are already there
 if not os.path.exists(wav_dir):
@@ -31,11 +31,11 @@ if not os.path.exists(csv_dir):
 
 # convert mp3 to wav
 with os.scandir(mp3_dir) as dir:
-    for entry in dir:
-        if entry.is_file() and entry.name.endswith(".mp3"):
-            song_id = entry.name.rstrip(".mp3")
+    for song in dir:
+        if song.is_file() and song.name.endswith(".mp3"):
+            song_id = song.name.rstrip(".mp3")
             if not os.path.exists(wav_dir + song_id + ".wav"):
-                sound = AudioSegment.from_mp3(src)
+                sound = AudioSegment.from_mp3(song)
                 sound.export(wav_dir + "//" + song_id + ".wav", format="wav")
                 print("created " + song_id + ".wav")
 
@@ -46,16 +46,16 @@ window_size = 500e-3
 #perform audio feature extraction using ShortTermFeatures:
 #output: a csv file for each song where the title is the song ID, columns correspond to features and rows to windows
 with os.scandir(wav_dir) as dir:
-    for entry in dir:
-        if entry.is_file() and entry.name.endswith(".wav"):
-            sample_rate, signal = audioBasicIO.read_audio_file(dst)
+    for song in dir:
+        if song.is_file() and song.name.endswith(".wav"):
+            sample_rate, signal = audioBasicIO.read_audio_file(song)
             features_and_deltas, feature_names = ShortTermFeatures.feature_extraction(signal, 2, window_size, window_size) #TODO: make this work
             features = np.transpose(features_and_deltas[:34,:])
 
-            song_id = entry.name.rstrip(".wav")
-            np.savetxt(fname=song_id+'.wav', X=features, encoding='UTF-8')
+            song_id = song.name.rstrip(".wav")
+            np.savetxt(fname=song_id+'.wav', X=features, encoding='ASCII')
             #song can be loaded into an np array named loaded_array with
-            #loaded_array = np.loadtxt(fname=csv_dir + song_id + '.csv',  encoding='UTF-8')
+            #loaded_array = np.loadtxt(fname=csv_dir + song_id + '.csv',  encoding='ASCII')
 
 
 #print(signal.shape)
