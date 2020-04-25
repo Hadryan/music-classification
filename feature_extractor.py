@@ -40,20 +40,25 @@ with os.scandir(mp3_dir) as dir:
                 print("created " + song_id + ".wav")
 
 
-song_size = 45
-window_size = 500e-3
+song_size = 4500
+//in msec
+window_size = 500
 
 #perform audio feature extraction using ShortTermFeatures:
 #output: a csv file for each song where the title is the song ID, columns correspond to features and rows to windows
 with os.scandir(wav_dir) as dir:
     for entry in dir:
         if entry.is_file() and entry.name.endswith(".wav"):
-            sample_rate, signal = audioBasicIO.read_audio_file(dst)
-            features_and_deltas, feature_names = ShortTermFeatures.feature_extraction(signal, 2, window_size, window_size) #TODO: make this work
+            #this code works for diarizationExample.wav file, so there must be something wrong with the converted wav files
+            sample_rate, signal = audioBasicIO.read_audio_file("diarizationExample.wav")
+            print(sample_rate)
+            #Sample rate used for feature extraction must be the same as in wav file
+            features_and_deltas, feature_names = ShortTermFeatures.feature_extraction(signal, sample_rate, window_size, window_size) #TODO: make this work
             features = np.transpose(features_and_deltas[:34,:])
 
             song_id = entry.name.rstrip(".wav")
-            np.savetxt(fname=song_id+'.wav', X=features, encoding='UTF-8')
+            #that should save to txt file?
+            np.savetxt(fname=song_id+'.txt', X=features, encoding='UTF-8')
             #song can be loaded into an np array named loaded_array with
             #loaded_array = np.loadtxt(fname=csv_dir + song_id + '.csv',  encoding='UTF-8')
 
