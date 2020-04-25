@@ -21,7 +21,7 @@ src = "2.mp3"
 dst = "2.wav"
 mp3_dir = "dataset//DEAM_audio//MEMD_audio"
 wav_dir = "dataset//DEAM_audio//wav_audio"
-csv_dir = "dataset//extracted_features//sampling"
+csv_dir = "dataset//extracted_features"
 
 #check if the directories are already there
 if not os.path.exists(wav_dir):
@@ -48,12 +48,14 @@ window_size = 500e-3
 with os.scandir(wav_dir) as dir:
     for song in dir:
         if song.is_file() and song.name.endswith(".wav"):
-            sample_rate, signal = audioBasicIO.read_audio_file(song)
+            # this code works for diarizationExample.wav file, so there must be something wrong with the converted wav files
+            sample_rate, signal = audioBasicIO.read_audio_file("diarizationExample.wav")
+            #sample_rate, signal = audioBasicIO.read_audio_file(dst)
             features_and_deltas, feature_names = ShortTermFeatures.feature_extraction(signal, 2, window_size, window_size) #TODO: make this work
             features = np.transpose(features_and_deltas[:34,:])
 
             song_id = song.name.rstrip(".wav")
-            np.savetxt(fname=song_id+'.wav', X=features, encoding='ASCII')
+            np.savetxt(fname=song_id+'.csv', X=features, encoding='ASCII')
             #song can be loaded into an np array named loaded_array with
             #loaded_array = np.loadtxt(fname=csv_dir + song_id + '.csv',  encoding='ASCII')
 
