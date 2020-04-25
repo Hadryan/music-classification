@@ -21,7 +21,7 @@ src = "2.mp3"
 dst = "2.wav"
 mp3_dir = "dataset//DEAM_audio//MEMD_audio"
 wav_dir = "dataset//DEAM_audio//wav_audio"
-csv_dir = "dataset//extracted_features"
+csv_dir = "dataset//extracted_features//sampling"
 
 #check if the directories are already there
 if not os.path.exists(wav_dir):
