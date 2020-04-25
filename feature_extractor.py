@@ -34,8 +34,8 @@ with os.scandir(mp3_dir) as dir:
     for entry in dir:
         if entry.is_file() and entry.name.endswith(".mp3"):
             song_id = entry.name.rstrip(".mp3")
-            if not os.path.exists(wav_dir + song_id + ".wav"):
-                sound = AudioSegment.from_mp3(entry.name)
+            if not os.path.exists(wav_dir + "//" + song_id + ".wav"):
+                sound = AudioSegment.from_mp3(mp3_dir + "//" +song_id + ".mp3")
                 sound.export(wav_dir + "//" + song_id + ".wav", format="wav")
                 print("created " + song_id + ".wav")
 
