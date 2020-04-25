@@ -17,8 +17,8 @@ import numpy as np
 #AudioSegment.converter = r"C:\\Users\\jorda\Documents\\Python\\ffmpeg-4.2.2-win64-static\\bin\\ffmpeg.exe"
 
 # 1st step - convert files from mp3 to wav, example for one song below
-src = "2.mp3"
-dst = "2.wav"
+#src = "2.mp3"
+#dst = "2.wav"
 mp3_dir = "dataset//DEAM_audio//MEMD_audio"
 wav_dir = "dataset//DEAM_audio//wav_audio"
 csv_dir = "dataset//extracted_features"
@@ -35,7 +35,7 @@ with os.scandir(mp3_dir) as dir:
         if entry.is_file() and entry.name.endswith(".mp3"):
             song_id = entry.name.rstrip(".mp3")
             if not os.path.exists(wav_dir + song_id + ".wav"):
-                sound = AudioSegment.from_mp3(src)
+                sound = AudioSegment.from_mp3(entry.name)
                 sound.export(wav_dir + "//" + song_id + ".wav", format="wav")
                 print("created " + song_id + ".wav")
 
