@@ -49,6 +49,7 @@ with os.scandir(wav_dir) as dir:
     for song in dir:
         if song.is_file() and song.name.endswith(".wav"):
             # this code works for diarizationExample.wav file, so there must be something wrong with the converted wav files
+            # replacing 'diarizationExample.wav' with '2.wav' in the example.py program causes it to fail, so I think you're onto something
             sample_rate, signal = audioBasicIO.read_audio_file("diarizationExample.wav")
             #sample_rate, signal = audioBasicIO.read_audio_file(dst)
             features_and_deltas, feature_names = ShortTermFeatures.feature_extraction(signal, 2, window_size, window_size) #TODO: make this work
