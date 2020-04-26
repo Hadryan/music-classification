@@ -12,6 +12,7 @@ from pyAudioAnalysis import ShortTermFeatures
 from pydub import AudioSegment
 import os
 import numpy as np
+import csv
 
 #if there is error with audio library path to ffmpeg needs to be explicitly defined
 #AudioSegment.converter = r"C:\\Users\\jorda\Documents\\Python\\ffmpeg-4.2.2-win64-static\\bin\\ffmpeg.exe"
@@ -22,6 +23,7 @@ dst = "2.wav"
 mp3_dir = "dataset//DEAM_audio//MEMD_audio"
 wav_dir = "dataset//DEAM_audio//wav_audio"
 csv_dir = "dataset//extracted_features//sampling"
+csv_file = csv_dir + "//features_no_sampling.csv"
 
 #check if the directories are already there
 if not os.path.exists(wav_dir):
@@ -41,7 +43,7 @@ def convert_mp3_to_wav(mp3_dir, wav_dir):
                     print("created " + song_id + ".wav")
 
 
-def extract_features(wav_dir):              
+def extract_features_per_frame(wav_dir, nr_frames):              
     song_size = 45
     window_size = 500
 
@@ -56,20 +58,52 @@ def extract_features(wav_dir):
                 print("Number of samples: ",len(signal))
                 signal = audioBasicIO.stereo_to_mono(signal)
                 #sample rate retrieved from read audio file is different that sample rate used as a second arg in feature extraction
-                features_and_deltas, feature_names = ShortTermFeatures.feature_extraction(signal, sample_rate, len(signal)/90, len(signal)/90) #TODO: make this work
+                features_and_deltas, feature_names = ShortTermFeatures.feature_extraction(signal, sample_rate, len(signal)/nr_frames, len(signal)/nr_frames) #TODO: make this work
                 print(len(features_and_deltas))
-                features = np.transpose(features_and_deltas[:34,:])
-
+                print(features_and_deltas)
+                features = np.transpose(features_and_deltas[:34,:]) # why is it limited to 34
+                #print(features)
                 song_id = song.name.rstrip(".wav")
-                np.savetxt(fname=song_id+'.csv', X=features, encoding='ASCII')
+                #with open(csv_dir+"//"+song_id+'.csv', 'w', newline='') as csvfile:
+                    #writer = csv.writer(csvfile, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+                    #writer.writerow([features])
+                np.savetxt(fname=csv_dir+"//"+song_id+'.csv', X=features, encoding='ASCII') # this does not save properly with delimiter
                 #song can be loaded into an np array named loaded_array with
                 #loaded_array = np.loadtxt(fname=csv_dir + song_id + '.csv',  encoding='ASCII')
 
 
-    #print(signal.shape)
+def extract_features_per_song(wav_dir, csv_file):              
+    song_size = 45
+    window_size = 500
+
+    #perform audio feature extraction using ShortTermFeatures:
+    #output: a csv file for each song where the title is the song ID, columns correspond to features and rows to windows
+    with os.scandir(wav_dir) as dir:
+        for song in dir:
+            if song.is_file() and song.name.endswith(".wav"):
+                print("Processing song: " + song.name)           
+                sample_rate, signal = audioBasicIO.read_audio_file(song)
+                print('Sample rate: ', sample_rate)
+                print("Number of samples: ",len(signal))
+                signal = audioBasicIO.stereo_to_mono(signal)
+                #sample rate retrieved from read audio file is different that sample rate used as a second arg in feature extraction
+                features_and_deltas, feature_names = ShortTermFeatures.feature_extraction(signal, sample_rate, len(signal), len(signal))
+                print(len(features_and_deltas))
+                features = np.transpose(features_and_deltas[:34,:]).flatten()
+
+                song_id = song.name.rstrip(".wav")
+                with open(file=csv_file , mode='w', encoding='ASCII') as file:
+                    writer = csv.writer(file, delimiter='\t')
+                    writer.writerow([song_id, features])
+                    #file.write(song_id)
+                    #for feature in features:
+                        #file.write('/t')
+                        #file.write(str(feature))
+                    #file.write('\n')
 
 #convert_mp3_to_wav(mp3_dir, wav_dir)
-extract_features(wav_dir)
+#extract_features_per_frame(wav_dir, 90)
+extract_features_per_song(wav_dir, csv_file)
 
 #there should be two variants of feature extraction (in two separate scripts): one that uses frame size of 500 msec (sampling rate of 2 Hz) and feature extraction per song level - using entire song (45 sec) as a frame size
 
