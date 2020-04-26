@@ -30,44 +30,46 @@ if not os.path.exists(csv_dir):
     os.mkdir(csv_dir)
 
 # convert mp3 to wav
-with os.scandir(mp3_dir) as dir:
-    for song in dir:
-        if song.is_file() and song.name.endswith(".mp3"):
-            song_id = song.name.rstrip(".mp3")
-            if not os.path.exists(wav_dir + song_id + ".wav"):
-                sound = AudioSegment.from_mp3(song)
-                sound.export(wav_dir + "//" + song_id + ".wav", format="wav")
-                print("created " + song_id + ".wav")
+def convert_mp3_to_wav(mp3_dir, wav_dir):
+    with os.scandir(mp3_dir) as dir:
+        for song in dir:
+            if song.is_file() and song.name.endswith(".mp3"):
+                song_id = song.name.rstrip(".mp3")
+                if not os.path.exists(wav_dir + song_id + ".wav"):
+                    sound = AudioSegment.from_mp3(song)
+                    sound.export(wav_dir + "//" + song_id + ".wav", format="wav")
+                    print("created " + song_id + ".wav")
 
 
-#these should be in msec not sec               
-song_size = 45
-window_size = 500e-3
+def extract_features(wav_dir):              
+    song_size = 45
+    window_size = 500
 
-#perform audio feature extraction using ShortTermFeatures:
-#output: a csv file for each song where the title is the song ID, columns correspond to features and rows to windows
-with os.scandir(wav_dir) as dir:
-    for song in dir:
-        if song.is_file() and song.name.endswith(".wav"):
-            # this code works for diarizationExample.wav file, so there must be something wrong with the converted wav files
-            # replacing 'diarizationExample.wav' with '2.wav' in the example.py program causes it to fail, so I think you're onto something
-            #try to use functions from pyAudioAnalysis/audioBasicIO to convert from mp3 to wav using specific sampling rate, or to change the sampling rate in wav file
-            sample_rate, signal = audioBasicIO.read_audio_file("diarizationExample.wav")
-            #sample_rate, signal = audioBasicIO.read_audio_file(dst)
-            #sample rate retrieved from read audio file is different that sample rate used as a second arg in feature extraction
-            # sample rate should be in Hz, not kHz: 2 -> 2000 if you use it explicitly
-            features_and_deltas, feature_names = ShortTermFeatures.feature_extraction(signal, 2, window_size, window_size) #TODO: make this work
-            features = np.transpose(features_and_deltas[:34,:])
+    #perform audio feature extraction using ShortTermFeatures:
+    #output: a csv file for each song where the title is the song ID, columns correspond to features and rows to windows
+    with os.scandir(wav_dir) as dir:
+        for song in dir:
+            if song.is_file() and song.name.endswith(".wav"):
+                print("Processing song: " + song.name)           
+                sample_rate, signal = audioBasicIO.read_audio_file(song)
+                print('Sample rate: ', sample_rate)
+                print("Number of samples: ",len(signal))
+                signal = audioBasicIO.stereo_to_mono(signal)
+                #sample rate retrieved from read audio file is different that sample rate used as a second arg in feature extraction
+                features_and_deltas, feature_names = ShortTermFeatures.feature_extraction(signal, sample_rate, len(signal)/90, len(signal)/90) #TODO: make this work
+                print(len(features_and_deltas))
+                features = np.transpose(features_and_deltas[:34,:])
 
-            song_id = song.name.rstrip(".wav")
-            np.savetxt(fname=song_id+'.csv', X=features, encoding='ASCII')
-            #song can be loaded into an np array named loaded_array with
-            #loaded_array = np.loadtxt(fname=csv_dir + song_id + '.csv',  encoding='ASCII')
-
-
-#print(signal.shape)
+                song_id = song.name.rstrip(".wav")
+                np.savetxt(fname=song_id+'.csv', X=features, encoding='ASCII')
+                #song can be loaded into an np array named loaded_array with
+                #loaded_array = np.loadtxt(fname=csv_dir + song_id + '.csv',  encoding='ASCII')
 
 
+    #print(signal.shape)
+
+#convert_mp3_to_wav(mp3_dir, wav_dir)
+extract_features(wav_dir)
 
 #there should be two variants of feature extraction (in two separate scripts): one that uses frame size of 500 msec (sampling rate of 2 Hz) and feature extraction per song level - using entire song (45 sec) as a frame size
 
