@@ -24,6 +24,10 @@ mp3_dir = "dataset//DEAM_audio//MEMD_audio"
 wav_dir = "dataset//DEAM_audio//wav_audio"
 csv_dir = "dataset//extracted_features//sampling"
 csv_file = csv_dir + "//features_no_sampling.csv"
+#directory where dynamic annotations per frame are stored
+dyn_ann_dir = "dataset//DEAM_annotations//annotations//dynamic//annotations averaged per song//dynamic (per second annotations)//"
+#directory where static annotations per song are stored
+stat_ann_dir = "dataset//DEAM_annotations//annotations//song_level//"
 
 #check if the directories are already there
 if not os.path.exists(wav_dir):
@@ -31,7 +35,7 @@ if not os.path.exists(wav_dir):
 if not os.path.exists(csv_dir):
     os.mkdir(csv_dir)
 
-# convert mp3 to wav
+""" Performs batch conversion of mp3 files specified in mp3_dir to wav files to wav_dir"""
 def convert_mp3_to_wav(mp3_dir, wav_dir):
     with os.scandir(mp3_dir) as dir:
         for song in dir:
@@ -43,7 +47,12 @@ def convert_mp3_to_wav(mp3_dir, wav_dir):
                     print("created " + song_id + ".wav")
 
 
-def extract_features_per_frame(wav_dir, nr_frames):              
+""" Performs batch feature extraction of wav files specified in wav directory
+    for the number of specified frames
+    Converts stereo to mono signal
+    Saves extracted features into csv files in csv_dir.
+    One csv files per song. Columns represent the features, rows - the frames."""
+def extract_features_per_frame(wav_dir, csv_dir, nr_frames):              
     song_size = 45
     window_size = 500
 
@@ -71,7 +80,9 @@ def extract_features_per_frame(wav_dir, nr_frames):
                 #song can be loaded into an np array named loaded_array with
                 #loaded_array = np.loadtxt(fname=csv_dir + song_id + '.csv',  encoding='ASCII')
 
-
+""" Performs batch feature extraction of wav files specified in wav directory
+    Converts stereo to mono signal
+    Saves extracted features into a csv files in csv_dir, where row represents songs and columns features extracted"""
 def extract_features_per_song(wav_dir, csv_file):              
     song_size = 45
     window_size = 500
@@ -100,6 +111,13 @@ def extract_features_per_song(wav_dir, csv_file):
                         #file.write('/t')
                         #file.write(str(feature))
                     #file.write('\n')
+
+""" Performs merging csv files: features extracted per song and static annotations with arousal/valence per song
+The resulting csv file has format:
+
+songID  Feature1    Feature2    ... FeatureN    Arousal Valence"""
+
+#def merge_features_annontations_per_song(features_dir, stat_ann_dir):
 
 #convert_mp3_to_wav(mp3_dir, wav_dir)
 #extract_features_per_frame(wav_dir, 90)
