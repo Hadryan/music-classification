@@ -68,17 +68,18 @@ def extract_features_per_frame(wav_dir, csv_dir, nr_frames):
                 signal = audioBasicIO.stereo_to_mono(signal)
                 #sample rate retrieved from read audio file is different that sample rate used as a second arg in feature extraction
                 features_and_deltas, feature_names = ShortTermFeatures.feature_extraction(signal, sample_rate, len(signal)/nr_frames, len(signal)/nr_frames) #TODO: make this work
-                print(len(features_and_deltas))
-                print(features_and_deltas)
+                #print(len(features_and_deltas))
+                #print(features_and_deltas)
                 features = np.transpose(features_and_deltas[:34,:]) # why is it limited to 34
                 #print(features)
                 song_id = song.name.rstrip(".wav")
-                #with open(csv_dir+"//"+song_id+'.csv', 'w', newline='') as csvfile:
-                    #writer = csv.writer(csvfile, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-                    #writer.writerow([features])
-                np.savetxt(fname=csv_dir+"//"+song_id+'.csv', X=features, delimiter=',', encoding='ASCII') # this does not save properly with delimiter
-                #song can be loaded into an np array named loaded_array with
-                #loaded_array = np.loadtxt(fname=csv_dir + '//' + song_id + '.csv', delimiter=',', encoding='ASCII')
+                with open(file=csv_dir + '/' + song_id + '.csv', mode='w', encoding='ASCII') as file:
+                    file.write('frame #' + np_row_to_string(feature_names[:34]) + '\n')
+                    current_frame = 0
+                    for row in features:
+                        file.write(str(current_frame) + np_row_to_string(row) + '\n')
+                        current_frame += 1
+
 
 """ Performs batch feature extraction of wav files specified in wav directory
     Converts stereo to mono signal
@@ -91,6 +92,7 @@ def extract_features_per_song(wav_dir, csv_file):
     #output: a single csv file that contains the song name and all 34 features for each song.
     with os.scandir(wav_dir) as dir:
         with open(file=csv_file, mode='w', encoding='ASCII') as file:
+            header_written = False
             for song in dir:
                 if song.is_file() and song.name.endswith(".wav"):
                     print("Processing song: " + song.name)
@@ -105,13 +107,22 @@ def extract_features_per_song(wav_dir, csv_file):
 
                     song_id = song.name.rstrip(".wav")
 
-                    writer = csv.writer(file, delimiter='\t')
-                    writer.writerow([song_id, features])
-                        #file.write(song_id)
-                        #for feature in features:
-                            #file.write('/t')
-                            #file.write(str(feature))
-                        #file.write('\n')
+                    if not header_written:
+                        file.write('song id' + np_row_to_string(feature_names[:34]) + '\n')
+                        header_written = True
+
+                    file.write(song_id + np_row_to_string(features) + '\n')
+
+
+""" Converts a row from a numpy array to a string with the format
+    ,element_1,element_2,...,element_n
+    Used when printing to files"""
+def np_row_to_string(row):
+    result = ''
+    for element in row:
+        result += ',' + str(element)
+
+    return result
 
 """ Performs merging csv files: features extracted per song and static annotations with arousal/valence per song
 The resulting csv file has format:
@@ -122,8 +133,8 @@ songID  Feature1    Feature2    ... FeatureN    Arousal Valence"""
 
 #convert_mp3_to_wav(mp3_dir, wav_dir)
 #extract_features_per_frame(wav_dir, 90)
-extract_features_per_song(wav_dir, csv_file)
-#extract_features_per_frame(wav_dir, 5)
+#extract_features_per_song(wav_dir, csv_file)
+extract_features_per_frame(wav_dir, csv_dir, 90)
 
 #there should be two variants of feature extraction (in two separate scripts): one that uses frame size of 500 msec (sampling rate of 2 Hz) and feature extraction per song level - using entire song (45 sec) as a frame size
 
