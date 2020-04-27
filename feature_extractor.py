@@ -51,7 +51,9 @@ def convert_mp3_to_wav(mp3_dir, wav_dir):
     for the number of specified frames
     Converts stereo to mono signal
     Saves extracted features into csv files in csv_dir.
-    One csv files per song. Columns represent the features, rows - the frames."""
+    One csv files per song. Columns represent the features, rows - the frames.
+    The first row is a header row with feature names
+    The first column is the frame counter """
 def extract_features_per_frame(wav_dir, csv_dir, nr_frames):              
     song_size = 45
     window_size = 500
@@ -121,9 +123,8 @@ songID  Feature1    Feature2    ... FeatureN    Arousal Valence"""
 #def merge_features_annontations_per_song(features_dir, stat_ann_dir):
 
 #convert_mp3_to_wav(mp3_dir, wav_dir)
-#extract_features_per_frame(wav_dir, 90)
+#extract_features_per_frame(wav_dir, csv_dir, 90)
 extract_features_per_song(wav_dir, csv_file)
-#extract_features_per_frame(wav_dir, 5)
 
 #there should be two variants of feature extraction (in two separate scripts): one that uses frame size of 500 msec (sampling rate of 2 Hz) and feature extraction per song level - using entire song (45 sec) as a frame size
 
