@@ -167,7 +167,6 @@ def merge_features_annontations_per_song(features_file, stat_ann_dir):
 
         for i in range(1,extracted_features.shape[0]):
             song_id = extracted_features[i][0]
-            row_to_write = extracted_features[i][0] + np_row_to_string(extracted_features[i][1:])
             #not the fastest way of searching for the row index, but it works
             annotation_row = -1
             for j in range(len(annotations)):
@@ -176,9 +175,10 @@ def merge_features_annontations_per_song(features_file, stat_ann_dir):
                     break
 
             if not annotation_row == -1:
-                row_to_write += ',' + annotations[annotation_row][1] + ',' + annotations[annotation_row][2]
+                row_to_write = extracted_features[i][0] + np_row_to_string(extracted_features[i][1:]) + \
+                    ',' + annotations[annotation_row][1] + ',' + annotations[annotation_row][2]
 
-            output.write(row_to_write + '\n')
+                output.write(row_to_write + '\n')
 
 #convert_mp3_to_wav(mp3_dir, wav_dir)
 #extract_features_per_frame(wav_dir, csv_dir, 90)
