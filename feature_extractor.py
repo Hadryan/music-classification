@@ -23,7 +23,8 @@ dst = "2.wav"
 mp3_dir = "dataset//DEAM_audio//MEMD_audio"
 wav_dir = "dataset//DEAM_audio//wav_audio"
 csv_dir = "dataset//extracted_features//sampling"
-csv_file = "dataset//extracted_features//features_no_sampling.csv"
+no_sampling_file = "dataset//extracted_features//features_no_sampling.csv"
+merged_sampling_file = "dataset//extracted_features//features_sampling_merged.csv"
 #directory where dynamic annotations per frame are stored
 dyn_ann_dir = "dataset//DEAM_annotations//annotations//dynamic//"
 #directory where static annotations per song are stored
@@ -156,12 +157,12 @@ def combine_static_annotation(stat_ann_dir):
     return result
 
 
-""" Performs merging csv files: csvs with features extracted per frame and dynamic annotations with arousal/valence per frame
+""" Performs merging csv files: csv with features extracted per frame and dynamic annotations with arousal/valence per frame
 The resulting csv file has format:
 
 songId_frameID  Feature1    Feature2    ... FeatureN    Arousal Valence"""
 
-def merge_features_annontations_per_frame(features_dir, dyn_ann_dir, ann_start_time = 15000):
+def merge_features_annontations_per_frame(output_file, features_dir, dyn_ann_dir, ann_start_time = 15000):
     window_size = 500
     arousal = []
     with open(dyn_ann_dir + 'arousal.csv', 'r') as file:
@@ -175,36 +176,42 @@ def merge_features_annontations_per_frame(features_dir, dyn_ann_dir, ann_start_t
         for row in reader:
             valence.append(row)
 
-    for file in os.scandir(features_dir):
-        if file.is_file() and file.name.endswith('.csv'):
-            song_id = file.name[:-4]
-            arousal_row = find_value_in_column(arousal, song_id)
-            valence_row = find_value_in_column(valence, song_id)
+    with open(output_file, 'w') as output:
+        header_written = False
+        for file in os.scandir(features_dir):
+            if file.is_file() and file.name.endswith('.csv'):
+                song_id = file.name[:-4]
+                arousal_row = find_value_in_column(arousal, song_id)
+                valence_row = find_value_in_column(valence, song_id)
 
-            if arousal_row > -1 and valence_row > -1:
-                extracted_features = []
-                with open(file, 'r') as features:
-                    reader = csv.reader(features, skipinitialspace=True)
-                    for row in reader:
-                        extracted_features.append(row[0: 1 + (45000 - ann_start_time) // window_size])
+                if arousal_row > -1 and valence_row > -1:
+                    print('Extracting features from ' + file.name)
+                    with open(file, 'r') as features:
+                        reader = csv.reader(features, skipinitialspace=True)
+                        trimmed_header = next(reader)[0: 1 + (45000 - ann_start_time) // window_size]
 
-                output_file = os.path.abspath(file)[:-4] + '_merge.csv'
-                start_ann_col = 15000 // window_size
-                cur_ann_col = 1
-                with open(output_file, 'w') as output:
-                    output.write(extracted_features[0][0] + \
-                                 np_row_to_string(extracted_features[0][1:]) + ',arousal,valence\n')
+                        start_ann_col = 15000 // window_size
+                        cur_ann_col = 1
+                        if not header_written:
+                            row_to_write = 'songID_' + trimmed_header[0] + np_row_to_string(trimmed_header[1:]) + \
+                                           ',arousal,valence\n'
+                            output.write(row_to_write)
+                            header_written = True
+                        else:
+                            current_row = 1
+                            for row in reader:
+                                trimmed_row = row[0: 1 + (45000 - ann_start_time) // window_size]
+                                #if cur_ann_col < 45000 // window_size:
+                                row_to_write = song_id + '_' + trimmed_row[0] + np_row_to_string(trimmed_row[1:])
+                                if current_row > start_ann_col:
 
-                    for i in range(1, len(extracted_features)):
-                        if cur_ann_col < 45000 // window_size:
-                            row_to_write = extracted_features[i][0] + np_row_to_string(extracted_features[i][1:])
+                                    row_to_write += ',' + arousal[arousal_row][cur_ann_col] + ',' + \
+                                                    valence[valence_row][cur_ann_col]
+                                    cur_ann_col += 1
+                                current_row += 1
+                                output.write(row_to_write + '\n')
 
-                            if i > start_ann_col:
-                                row_to_write += ',' + arousal[arousal_row][cur_ann_col] + ',' + \
-                                    valence[valence_row][cur_ann_col]
-                                cur_ann_col += 1
 
-                            output.write(row_to_write + '\n')
 """ Performs merging csv files: features extracted per song and static annotations with arousal/valence per song
 The resulting csv file has format:
 
@@ -236,8 +243,8 @@ def merge_features_annontations_per_song(features_file, stat_ann_dir):
 
 #there should be two variants of feature extraction (in two separate scripts): one that uses frame size of 500 msec (sampling rate of 2 Hz) and feature extraction per song level - using entire song (45 sec) as a frame size
 #print(combine_static_annotation(stat_ann_dir))
-#merge_features_annontations_per_song(csv_file, stat_ann_dir)
-merge_features_annontations_per_frame(csv_dir, dyn_ann_dir)
+#merge_features_annontations_per_song(no_sampling_file, stat_ann_dir)
+merge_features_annontations_per_frame(merged_sampling_file, csv_dir, dyn_ann_dir)
 
 #in the first variant there will be one csv file per song with columns that correspond to features and rows to windows
 #in the second script the output will be one csv file for features as columns and rows as songs
