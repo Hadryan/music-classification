@@ -201,15 +201,15 @@ def merge_features_annontations_per_frame(output_file, features_dir, dyn_ann_dir
                             current_row = 1
                             for row in reader:
                                 trimmed_row = row[0: 1 + (45000 - ann_start_time) // window_size]
-                                #if cur_ann_col < 45000 // window_size:
-                                row_to_write = song_id + '_' + trimmed_row[0] + np_row_to_string(trimmed_row[1:])
-                                if current_row > start_ann_col:
 
-                                    row_to_write += ',' + arousal[arousal_row][cur_ann_col] + ',' + \
-                                                    valence[valence_row][cur_ann_col]
+                                if current_row > start_ann_col:
+                                    row_to_write = song_id + '_' + trimmed_row[0] + np_row_to_string(trimmed_row[1:]) \
+                                                    + ',' + arousal[arousal_row][cur_ann_col] + ',' \
+                                                    + valence[valence_row][cur_ann_col]
                                     cur_ann_col += 1
+                                    output.write(row_to_write + '\n')
                                 current_row += 1
-                                output.write(row_to_write + '\n')
+
 
 
 """ Performs merging csv files: features extracted per song and static annotations with arousal/valence per song
