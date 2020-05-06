@@ -165,7 +165,7 @@ The resulting csv file has format:
 
 songId_frameID  Feature1    Feature2    ... FeatureN    Arousal Valence"""
 
-def merge_features_annontations_per_frame(output_file, features_dir, dyn_ann_dir, ann_start_time = 15000):
+def merge_features_annontations_per_frame(output_file, features_dir, dyn_ann_dir, ann_start_time = 15000, ann_finish_time = 45000):
     window_size = 500
     arousal = []
     with open(dyn_ann_dir + 'arousal.csv', 'r') as file:
@@ -191,9 +191,10 @@ def merge_features_annontations_per_frame(output_file, features_dir, dyn_ann_dir
                     print('Extracting features from ' + file.name)
                     with open(file, 'r') as features:
                         reader = csv.reader(features, skipinitialspace=True)
-                        trimmed_header = next(reader)[0: 1 + (45000 - ann_start_time) // window_size]
+                        trimmed_header = next(reader)[0: 1 + (ann_finish_time - ann_start_time) // window_size]
 
-                        start_ann_col = 15000 // window_size
+                        start_ann_col = ann_start_time // window_size
+                        end_ann_col = ann_finish_time // window_size
                         cur_ann_col = 1
                         if not header_written:
                             row_to_write = 'songID_' + trimmed_header[0] + np_row_to_string(trimmed_header[1:]) + \
@@ -203,9 +204,9 @@ def merge_features_annontations_per_frame(output_file, features_dir, dyn_ann_dir
                         else:
                             current_row = 1
                             for row in reader:
-                                trimmed_row = row[0: 1 + (45000 - ann_start_time) // window_size]
+                                trimmed_row = row[0: 1 + (ann_finish_time - ann_start_time) // window_size]
 
-                                if current_row > start_ann_col:
+                                if current_row > start_ann_col and current_row <= end_ann_col:
                                     row_to_write = song_id + '_' + trimmed_row[0] + np_row_to_string(trimmed_row[1:]) \
                                                     + ',' + arousal[arousal_row][cur_ann_col] + ',' \
                                                     + valence[valence_row][cur_ann_col]
@@ -241,13 +242,13 @@ def merge_features_annontations_per_song(features_file, stat_ann_dir):
                 output.write(row_to_write + '\n')
 
 #convert_mp3_to_wav(mp3_dir, wav_dir)
-extract_features_per_frame(wav_dir, csv_dir, 90)
+#extract_features_per_frame(wav_dir, csv_dir, 90)
 #extract_features_per_song(wav_dir, no_sampling_file)
 
 #there should be two variants of feature extraction (in two separate scripts): one that uses frame size of 500 msec (sampling rate of 2 Hz) and feature extraction per song level - using entire song (45 sec) as a frame size
 #print(combine_static_annotation(stat_ann_dir))
 #merge_features_annontations_per_song(no_sampling_file, stat_ann_dir)
-#merge_features_annontations_per_frame(merged_sampling_file, csv_dir, dyn_ann_dir)
+merge_features_annontations_per_frame(merged_sampling_file, csv_dir, dyn_ann_dir)
 
 #in the first variant there will be one csv file per song with columns that correspond to features and rows to windows
 #in the second script the output will be one csv file for features as columns and rows as songs
