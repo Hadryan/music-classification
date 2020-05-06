@@ -66,19 +66,22 @@ def extract_features_per_frame(wav_dir, csv_dir, nr_frames):
                 sample_rate, signal = audioBasicIO.read_audio_file(song)
                 print('Sample rate: ', sample_rate)
                 print("Number of samples: ",len(signal))
-                #perform conversion from stereo to mono
-                signal = audioBasicIO.stereo_to_mono(signal)
-                #perform audio feature extraction using ShortTermFeatures:
-                features_and_deltas, feature_names = ShortTermFeatures.feature_extraction(signal, sample_rate, len(signal)/nr_frames, len(signal)/nr_frames)
-                features = np.transpose(features_and_deltas[:34,:])
-                #output: a csv file for each song where the title is the song ID, columns correspond to features and rows to windows
-                with open(file=csv_dir + '/' + song_id + '.csv', mode='w', encoding='ASCII') as file:
-                    print("Writing " + csv_dir + '/' + song_id + '.csv')
-                    file.write('frame #' + np_row_to_string(feature_names[:34]) + '\n')
-                    current_frame = 0
-                    for row in features:
-                        file.write(str(current_frame) + np_row_to_string(row) + '\n')
-                        current_frame += 1
+                print("Song length: ",int(len(signal)/sample_rate))
+                # discard if song length != 45 sec
+                if (int(len(signal)/sample_rate) == 45):
+                    #perform conversion from stereo to mono
+                    signal = audioBasicIO.stereo_to_mono(signal)
+                    #perform audio feature extraction using ShortTermFeatures:
+                    features_and_deltas, feature_names = ShortTermFeatures.feature_extraction(signal, sample_rate, 0.5*sample_rate, 0.5*sample_rate)
+                    features = np.transpose(features_and_deltas[:34,:])
+                    #output: a csv file for each song where the title is the song ID, columns correspond to features and rows to windows
+                    with open(file=csv_dir + '/' + song_id + '.csv', mode='w', encoding='ASCII') as file:
+                        print("Writing " + csv_dir + '/' + song_id + '.csv')
+                        file.write('frame #' + np_row_to_string(feature_names[:34]) + '\n')
+                        current_frame = 0
+                        for row in features:
+                            file.write(str(current_frame) + np_row_to_string(row) + '\n')
+                            current_frame += 1
 
 
 """ Performs batch feature extraction of wav files specified in wav directory
@@ -101,7 +104,7 @@ def extract_features_per_song(wav_dir, csv_file):
                     print("Number of samples: ",len(signal))
                     signal = audioBasicIO.stereo_to_mono(signal)
                     #sample rate retrieved from read audio file is different that sample rate used as a second arg in feature extraction
-                    features_and_deltas, feature_names = ShortTermFeatures.feature_extraction(signal, sample_rate, len(signal), len(signal))
+                    features_and_deltas, feature_names = ShortTermFeatures.feature_extraction(signal, sample_rate, 45*sample_rate, 45*sample_rate)
                     print(len(features_and_deltas))
                     features = np.transpose(features_and_deltas[:34,:]).flatten()
 
@@ -238,13 +241,13 @@ def merge_features_annontations_per_song(features_file, stat_ann_dir):
                 output.write(row_to_write + '\n')
 
 #convert_mp3_to_wav(mp3_dir, wav_dir)
-#extract_features_per_frame(wav_dir, csv_dir, 90)
-#extract_features_per_song(wav_dir, csv_file)
+extract_features_per_frame(wav_dir, csv_dir, 90)
+#extract_features_per_song(wav_dir, no_sampling_file)
 
 #there should be two variants of feature extraction (in two separate scripts): one that uses frame size of 500 msec (sampling rate of 2 Hz) and feature extraction per song level - using entire song (45 sec) as a frame size
 #print(combine_static_annotation(stat_ann_dir))
 #merge_features_annontations_per_song(no_sampling_file, stat_ann_dir)
-merge_features_annontations_per_frame(merged_sampling_file, csv_dir, dyn_ann_dir)
+#merge_features_annontations_per_frame(merged_sampling_file, csv_dir, dyn_ann_dir)
 
 #in the first variant there will be one csv file per song with columns that correspond to features and rows to windows
 #in the second script the output will be one csv file for features as columns and rows as songs
