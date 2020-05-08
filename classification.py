@@ -6,7 +6,7 @@ Tests different regression models for valence and arousal
 from pyAudioAnalysis import audioTrainTest
 import numpy as np
 
-
+#Read features and labels from csv files
 csv_song = "dataset//extracted_features//features_no_sampling_avg_merge.csv"
 csv_frame = "dataset//extracted_features//features_sampling_merged.csv"
 
@@ -20,10 +20,13 @@ def read_valence(file):
 def read_arousal(file):
     return np.genfromtxt(file,delimiter=',',skip_header=1,usecols = (35))
 
+#TO DO Normalization of features?
+
+
+# Tuning parameters
 n_exp=10;
 method1="svm"
 method2="randomforest"
-
 
 #variants for SVM kernel
 kernel_1 = 'linear'
@@ -41,11 +44,15 @@ c_param_5 = 10000
 c_param_6 = 100000
 c_param_7 = 1000000
 
-
 #variant for random forest - nr of estomators
 n_1 = 10
 n_2 = 100
 
+#build and evaluate regression
+
+'''
+Perform training and evaluation of different regression models on song-level dataset
+'''
 def train_models_song(csv_song):
     
     #read features from file
@@ -59,6 +66,9 @@ def train_models_song(csv_song):
     
     arousal_labels_song = read_arousal(csv_song)
     #print(arousal_labels_song)
+    
+    #optional normalization
+    features_norm, mean, std = audioTrainTest.normalize_features(features_per_song)
     
     #Prints RMSE root mean squared error
     #svm_model, error = audioTrainTest.train_svm_regression(features_per_song, arousal_labels_song, c_param_1, kernel='linear')
@@ -78,8 +88,8 @@ def train_models_song(csv_song):
     
 
 '''
+PER SONG DATASET
 *****************Tuning***************************************
-
 SVM
 Kernel    C        RMSE_arousal            RMSE_valence
 linear     c1      0.7826529105769882
@@ -101,6 +111,9 @@ Random forest
 40                0.29143358895705523    0.2787717791411043
 '''
 
+'''
+Perform training and evaluation of different regression models on frame-level dataset
+'''
 def train_models_frame(file):
     #read features from file
     features_per_frame = read_features_csv(csv_frame)
@@ -113,12 +126,27 @@ def train_models_frame(file):
     arousal_labels_frame = read_arousal(csv_frame)
     #print(arousal_labels_frame)
     
-    rf_model, error = audioTrainTest.train_random_forest_regression(features_per_frame, arousal_labels_frame, 60)
+    #optional normalization
+    features_norm, mean, std = audioTrainTest.normalize_features(features_per_frame)
+    
+    svm_model, error = audioTrainTest.train_svm_regression(features_per_frame, arousal_labels_frame, c_param_3, kernel='linear')
     print(error)
+    
+    #rf_model, error = audioTrainTest.train_random_forest_regression(features_per_frame, valence_labels_frame, 50)
+    #print(error)
 
-
+#results
 '''
+PER FRAME DATASET
 *****************Tuning***************************************
+Random forest    Arousal-RMSE                Valence-RMSE
+#Est                
+50                                         0.052537364826242265<-----OPT_RF
+60                0.05273607016219178 <- 
+70                
+40  
+
+
 
 SVM
 Kernel    C        RMSE_arousal            RMSE_valence
@@ -133,27 +161,11 @@ poly        c3      0.7744015664233957
 poly        c4      0.7489752120251861
 poly        c6      0.6894546907917157
 
-Random forest
-#Est                
-50                0.29432147239263795   0.27406723926380366 <-----OPT_RF
-60                0.2888088957055214 <- 0.2765730061349693 
-70                0.28907467134092896
-40                0.29143358895705523    0.2787717791411043
+Note:              
 '''
-#build and evaluate regression
-
-#train_models_song(csv_song)
-
-train_models_frame(csv_frame)
-
-#TODO
 
 
-#
-
-#rf_model, error = train_random_forest_regression(features, labels, n_estimators)
-
-
+#parameter optimization TO DO
 #bestParam = evaluate_regression(features, labels, n_exp, method_name, params):
 """
     ARGUMENTS:
@@ -166,3 +178,8 @@ train_models_frame(csv_frame)
          bestParam:   the value of the input parameter that optimizes
          the selected performance measure
     """
+    
+    
+#train_models_song(csv_song)
+
+train_models_frame(csv_frame)
