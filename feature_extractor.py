@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from pyAudioAnalysis import audioBasicIO
 from pyAudioAnalysis import audioAnalysis
 from pyAudioAnalysis import ShortTermFeatures
+from pyAudioAnalysis import MidTermFeatures
 from pydub import AudioSegment
 import os
 import numpy as np
@@ -22,8 +23,10 @@ src = "2.mp3"
 dst = "2.wav"
 mp3_dir = "dataset//DEAM_audio//MEMD_audio"
 wav_dir = "dataset//DEAM_audio//wav_audio"
+test_dir = "dataset//DEAM_audio//test_audio"
 csv_dir = "dataset//extracted_features//sampling"
 no_sampling_file = "dataset//extracted_features//features_no_sampling.csv"
+no_sampling_avg_file = "dataset//extracted_features//features_no_sampling_avg.csv"
 merged_sampling_file = "dataset//extracted_features//features_sampling_merged.csv"
 #directory where dynamic annotations per frame are stored
 dyn_ann_dir = "dataset//DEAM_annotations//annotations//dynamic//"
@@ -108,6 +111,8 @@ def extract_features_per_song(wav_dir, csv_file):
                         features_and_deltas, feature_names = ShortTermFeatures.feature_extraction(signal, sample_rate, 45*sample_rate, 45*sample_rate)
                         print(len(features_and_deltas))
                         features = np.transpose(features_and_deltas[:34,:]).flatten()
+                        print(feature_names[:34])
+                        print(features)
 
                         song_id = song.name.rstrip(".wav")
 
@@ -116,8 +121,55 @@ def extract_features_per_song(wav_dir, csv_file):
                             header_written = True
 
                         file.write(song_id + np_row_to_string(features) + '\n')
+                        
+                        
+""" Performs batch feature extraction of wav files specified in wav directory
+    One feature vector per song
+    Converts stereo to mono signal
+    Performs mid-term feature extraction and long-term averages them
+    Saves extracted features into a csv files in csv_dir, where row represents songs and columns features extracted"""
+def extract_features_per_song_avg(wav_dir, csv_file):
 
+    #output: a single csv file that contains the song name and all 34 features for each song averaged.
+    with os.scandir(wav_dir) as dir:
+        with open(file=csv_file, mode='w', encoding='ASCII') as file:
+            header_written = False
+            for song in dir:
+                if song.is_file() and song.name.endswith(".wav"):
+                    print("Processing song: " + song.name)
+                    sample_rate, signal = audioBasicIO.read_audio_file(song)
+                    print('Sample rate: ', sample_rate)
+                    print("Number of samples: ",len(signal))
 
+                    signal = audioBasicIO.stereo_to_mono(signal)
+                    # mid-term feature extraction using mid-term window of 2sec and short-window of 0.5sec
+                    mid_features, short_features, mid_feature_names = MidTermFeatures.mid_feature_extraction(signal, sample_rate, 2*sample_rate, 2*sample_rate, 0.5*sample_rate, 0.5*sample_rate)
+                    #compute avergaes
+                    long_features, long_feature_names = [], []
+                    for i in range(34):
+                        long_features.append([])
+                        long_feature_names.append("")
+                    # for each of the mid-term features:
+                    for i in range(34):
+                        cur_position = 0
+                        num_mid_features = len(mid_features[i])
+                        long_feature_names[i] = mid_feature_names[i] + "_" + "mean"
+                        #mid_feature_names[i + n_feats] = short_feature_names[i] + "_" + "std"
+                        long_features[i].append(np.mean(mid_features[i]))
+                
+                    #print(long_feature_names)
+                    #print(long_features)
+                    n_feats = len(short_features)
+                    print(n_feats)
+
+                    song_id = song.name.rstrip(".wav")
+
+                    if not header_written:
+                        file.write('song id' + np_row_to_string(long_feature_names) + '\n')
+                        header_written = True
+                        print("header written")
+                    
+                    file.write(song_id + np_row_to_string2(long_features) + '\n')
 
 
 """ Converts a row from a numpy array to a string with the format
@@ -127,6 +179,16 @@ def np_row_to_string(row):
     result = ''
     for element in row:
         result += ',' + str(element)
+
+    return result
+    
+""" Converts a list to a string with the format
+    ,element_1,element_2,...,element_n
+    Used when printing to files"""
+def np_row_to_string2(row):
+    result = ''
+    for element in row:
+        result += ',' + str(element)[1:-1]
 
     return result
 
@@ -245,11 +307,11 @@ def merge_features_annontations_per_song(features_file, stat_ann_dir):
 #convert_mp3_to_wav(mp3_dir, wav_dir)
 #extract_features_per_frame(wav_dir, csv_dir, 90)
 #extract_features_per_song(wav_dir, no_sampling_file)
+#extract_features_per_song_avg(wav_dir, no_sampling_avg_file)
 
-#there should be two variants of feature extraction (in two separate scripts): one that uses frame size of 500 msec (sampling rate of 2 Hz) and feature extraction per song level - using entire song (45 sec) as a frame size
 #print(combine_static_annotation(stat_ann_dir))
-#merge_features_annontations_per_song(no_sampling_file, stat_ann_dir)
-merge_features_annontations_per_frame(merged_sampling_file, csv_dir, dyn_ann_dir)
+merge_features_annontations_per_song(no_sampling_avg_file, stat_ann_dir)
+#merge_features_annontations_per_frame(merged_sampling_file, csv_dir, dyn_ann_dir)
 
 #in the first variant there will be one csv file per song with columns that correspond to features and rows to windows
 #in the second script the output will be one csv file for features as columns and rows as songs
