@@ -44,11 +44,47 @@ c_param_5 = 10000
 c_param_6 = 100000
 c_param_7 = 1000000
 
-#variant for random forest - nr of estomators
+#variant for random forest - nr of estimators
 n_1 = 10
 n_2 = 100
 
 #build and evaluate regression
+'''
+ARGUMENTS:
+        dataset:    "song" or "frame"
+        model:   "svm" or "randomforest"
+        kernel: kernel of SVM model: 'rbf', 'linear', 'poly', 'sigmoid'
+        c_param: C parameter for RBF
+        est:    nr of estimators for random forests [10;100]
+        label:    "valence" or "arousal"
+    RETURNS:
+        error:     root mean squared error
+'''
+def train_model(dataset="song", normalize = False, model = "svm", kernel='rbf', c_param=10, label="valence", est=50):
+    
+    if dataset == "song":
+        file = csv_song
+    elif dataset == "frame":
+        file = csv_frame
+    
+    features = read_features_csv(file)
+    
+    if normalize:
+        features = audioTrainTest.normalize_features(features)
+    if label == "valence":
+        labels = read_valence(file)
+    elif label == "arousal":
+        labels = read_arousal(file)
+    print("Nr of instances: "+ str(len(labels)))
+    
+    if model == "svm":
+        reg_model, error = audioTrainTest.train_svm_regression(features, labels, c_param, kernel)
+    elif model == "randomforest":
+        reg_model, error = audioTrainTest.train_random_forest_regression(features, labels, est)
+        
+    print("Error: " + str(error))
+    
+    return reg_model, error
 
 '''
 Perform training and evaluation of different regression models on song-level dataset
@@ -146,40 +182,49 @@ Random forest    Arousal-RMSE                Valence-RMSE
 70                
 40  
 
-
-
-SVM
-Kernel    C        RMSE_arousal            RMSE_valence
-linear     c1      0.7826529105769882
-linear     c2      0.769494156112072
-linear     c3      0.7541538268819094    0.6869591733288045 <-----OPT_LIN
-rbf        c3      0.7649733193215299
-rbf        c6      0.6643038703578852    0.6540281566625666 <----OPT_RBF
-rbf        c5                             0.6869591733288045
-sigmoid    0.001    1.070402737059893
-poly        c3      0.7744015664233957
-poly        c4      0.7489752120251861
-poly        c6      0.6894546907917157
-
-Note:              
+            
 '''
 
-
-#parameter optimization TO DO
-#bestParam = evaluate_regression(features, labels, n_exp, method_name, params):
 """
+ Checks regression model with different paramaters and returns the optimal
     ARGUMENTS:
-        features:     np matrices of features [n_samples x numOfDimensions]
-        labels:       list of sample labels
+        file:    file with features and lables
         n_exp:         number of cross-validation experiments
         method_name:   "svm" or "randomforest"
-        params:       list of classifier params to be evaluated
+        label:    "valence" or "arousal"
     RETURNS:
          bestParam:   the value of the input parameter that optimizes
          the selected performance measure
-    """
+"""
+def evaluate(file, model_type='randomforest', n_exp=10, label='valence'):
+
+    features = read_features_csv(file)
+    if label == "valence":
+        labels = read_valence(file)
+    elif label == "arousal":
+        labels = read_arousal(file)
     
+    if model_type == "svm" or model_type == "svm_rbf":
+        model_params = np.array([0.001, 0.005, 0.01, 0.05, 0.1, 0.25, 0.5,
+                                 1.0, 5.0, 10.0, 100.0, 1000.0, 10000.0, 100000.0])
+    elif model_type == "randomforest":
+        model_params = np.array([5, 10, 25, 50, 100])
+    
+    print(model_params)
+
+    bestParam, error, berror = audioTrainTest.evaluate_regression(features, labels, n_exp, model_type, model_params)
+    print("Best param:")
+    print(bestParam)
+    print("Error:")
+    print(error)
+    print("Best error:")
+    print (berror)
+#bestParam = evaluate_regression(features, labels, n_exp, method_name, params):
     
 #train_models_song(csv_song)
 
-train_models_frame(csv_frame)
+#train_models_frame(csv_frame)
+
+#evaluate(file=csv_song, n_exp=10)
+
+train_model(dataset="song", normalize = False, model = "svm", kernel='rbf', c_param=10, label="valence", est=50)
