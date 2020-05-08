@@ -86,6 +86,8 @@ def train_model(dataset="song", normalize = False, model = "svm", kernel='rbf', 
     
     return reg_model, error
 
+#def train_models(dataset="song", normalize = False, model = "svm", kernel='rbf', c_param=10, label="valence")
+
 '''
 Perform training and evaluation of different regression models on song-level dataset
 '''
@@ -127,7 +129,7 @@ def train_models_song(csv_song):
 PER SONG DATASET
 *****************Tuning***************************************
 SVM
-Kernel    C        RMSE_arousal            RMSE_valence
+Kernel    C        Train_err_arousal            Train_err_RMSE_valence
 linear     c1      0.7826529105769882
 linear     c2      0.769494156112072
 linear     c3      0.7541538268819094    0.6869591733288045 <-----OPT_LIN
@@ -175,7 +177,7 @@ def train_models_frame(file):
 '''
 PER FRAME DATASET
 *****************Tuning***************************************
-Random forest    Arousal-RMSE                Valence-RMSE
+Random forest    Arousal-train_err                Valence-train_err
 #Est                
 50                                         0.052537364826242265<-----OPT_RF
 60                0.05273607016219178 <- 
@@ -191,12 +193,13 @@ Random forest    Arousal-RMSE                Valence-RMSE
         file:    file with features and lables
         n_exp:         number of cross-validation experiments
         method_name:   "svm" or "randomforest"
+        svm_kernel:    'linear', 'rbf', 'poly', 'sigmoid'
         label:    "valence" or "arousal"
     RETURNS:
          bestParam:   the value of the input parameter that optimizes
          the selected performance measure
 """
-def evaluate(file, model_type='randomforest', n_exp=10, label='valence'):
+def evaluate(file, model_type='randomforest', svm_kernel = 'linear', n_exp=10, label='valence'):
 
     features = read_features_csv(file)
     if label == "valence":
@@ -212,13 +215,101 @@ def evaluate(file, model_type='randomforest', n_exp=10, label='valence'):
     
     print(model_params)
 
-    bestParam, error, berror = audioTrainTest.evaluate_regression(features, labels, n_exp, model_type, model_params)
+    #bestParam, error, berror = audioTrainTest.evaluate_regression(features, labels, n_exp, model_type, model_params)
+    bestParam, error, berror = evaluate_regression(features, labels, n_exp, model_type, svm_kernel, model_params, normalize=False, per_train=0.9)
+    print("Testing model: "+ model_type)
     print("Best param:")
     print(bestParam)
     print("Error:")
     print(error)
     print("Best error:")
     print (berror)
+
+"Override from audioTrainTest - with no normalization option, percentage of train, and different kernels"
+def evaluate_regression(features, labels, n_exp, method_name, svm_kernel, params, normalize=False, per_train=0.9):
+    """
+    ARGUMENTS:
+        features:     np matrices of features [n_samples x numOfDimensions]
+        labels:       list of sample labels
+        n_exp:         number of cross-validation experiments
+        method_name:   "svm" or "randomforest"
+        params:       list of classifier params to be evaluated
+    RETURNS:
+         bestParam:   the value of the input parameter that optimizes
+         the selected performance measure
+    """
+
+    # feature normalization:
+    if (normalize == True):
+        features_norm, mean, std = audioTrainTest.normalize_features([features])
+        features_norm = features_norm[0]
+    elif (normalize == False):
+        features_norm=features
+    n_samples = labels.shape[0]
+    #per_train = 0.9
+    errors_all = []
+    er_train_all = []
+    er_base_all = []
+    for Ci, C in enumerate(params):   # for each param value
+                errors = []
+                errors_train = []
+                errors_baseline = []
+                for e in range(n_exp):   # for each cross-validation iteration:
+                    # split features:
+                    randperm = np.random.permutation(range(n_samples))
+                    n_train = int(round(per_train * n_samples))
+                    f_train = [features_norm[randperm[i]]
+                               for i in range(n_train)]
+                    f_test = [features_norm[randperm[i+n_train]]
+                              for i in range(n_samples - n_train)]
+                    l_train = [labels[randperm[i]] for i in range(n_train)]
+                    l_test = [labels[randperm[i + n_train]]
+                              for i in range(n_samples - n_train)]
+
+                    # train multi-class svms:                    
+                    f_train = np.matrix(f_train)                                 
+                    if method_name == "svm":                                        
+                        classifier, train_err = \
+                            audioTrainTest.train_svm_regression(f_train, l_train, C, kernel=svm_kernel)
+                    #elif method_name == "svm_rbf":                      
+                        #classifier, train_err = \
+                            #train_svm_regression(f_train, l_train, C,
+                                                 #kernel='rbf')
+                    elif method_name == "randomforest":
+                        classifier, train_err = \
+                            audioTrainTest.train_random_forest_regression(f_train, l_train, C)
+                    error_test = []
+                    error_test_baseline = []
+                    for itest, fTest in enumerate(f_test):
+                        R = audioTrainTest.regression_wrapper(classifier, method_name, fTest)
+                        Rbaseline = np.mean(l_train)
+                        error_test.append((R - l_test[itest]) *
+                                          (R - l_test[itest]))
+                        error_test_baseline.append((Rbaseline - l_test[itest]) *
+                                                  (Rbaseline - l_test[itest]))
+                    error = np.array(error_test).mean()
+                    error_baseline = np.array(error_test_baseline).mean()
+                    errors.append(error)
+                    errors_train.append(train_err)
+                    errors_baseline.append(error_baseline)
+                errors_all.append(np.array(errors).mean())
+                er_train_all.append(np.array(errors_train).mean())
+                er_base_all.append(np.array(errors_baseline).mean())
+
+    best_ind = np.argmin(errors_all)
+
+    print("{0:s}\t\t{1:s}\t\t{2:s}\t\t{3:s}".format("Param", "MSE",
+                                                    "T-MSE", "R-MSE"))
+    for i in range(len(errors_all)):
+        print("{0:.4f}\t\t{1:.2f}\t\t{2:.2f}\t\t{3:.2f}".format(params[i],
+                                                                errors_all[i],
+                                                                er_train_all[i],
+                                                                er_base_all[i]),
+              end="")
+        if i == best_ind:
+            print("\t\t best",end="")
+        print("")
+    return params[best_ind], errors_all[best_ind], er_base_all[best_ind]
 #bestParam = evaluate_regression(features, labels, n_exp, method_name, params):
     
 #train_models_song(csv_song)
@@ -226,5 +317,6 @@ def evaluate(file, model_type='randomforest', n_exp=10, label='valence'):
 #train_models_frame(csv_frame)
 
 #evaluate(file=csv_song, n_exp=10)
+evaluate(file=csv_song, model_type='svm', svm_kernel = 'linear', n_exp=10, label='valence')
 
-train_model(dataset="song", normalize = False, model = "svm", kernel='rbf', c_param=10, label="valence", est=50)
+#train_model(dataset="song", normalize = False, model = "svm", kernel='rbf', c_param=10, label="valence", est=50)
