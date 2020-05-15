@@ -9,6 +9,8 @@ import numpy as np
 #Read features and labels from csv files
 csv_song = "dataset//extracted_features//features_no_sampling_avg_merge.csv"
 csv_frame = "dataset//extracted_features//features_sampling_merged.csv"
+"Directory for data models"
+dm_dir = "results//data_models//"
 
 def read_features_csv(file):
     return np.genfromtxt(file,delimiter=',',skip_header=1,usecols = range(1,35))
@@ -199,7 +201,8 @@ Random forest    Arousal-train_err                Valence-train_err
          bestParam:   the value of the input parameter that optimizes
          the selected performance measure
 """
-def evaluate(file, model_type='randomforest', svm_kernel = 'linear', n_exp=10, label='valence'):
+def evaluate(file, model_type='randomforest', svm_kernel = 'linear', n_exp=10, label='valence', normalize = False, c_param = [0.001, 0.005, 0.01, 0.05, 0.1, 0.25, 0.5,
+                                 1.0, 5.0, 10.0, 25.0, 50.0, 100.0], est_param = [1, 5, 10, 25, 50, 100]):
 
     features = read_features_csv(file)
     if label == "valence":
@@ -208,25 +211,32 @@ def evaluate(file, model_type='randomforest', svm_kernel = 'linear', n_exp=10, l
         labels = read_arousal(file)
     
     if model_type == "svm" or model_type == "svm_rbf":
-        model_params = np.array([0.001, 0.005, 0.01, 0.05, 0.1, 0.25, 0.5,
-                                 1.0, 5.0, 10.0, 100.0, 1000.0, 10000.0, 100000.0])
+        model_params = np.array(c_param)
+        #model_params = np.array([10.0, 100.0, 1000.0])
+        #([0.001, 0.005, 0.01, 0.05, 0.1, 0.25, 0.5, 1.0, 5.0, 10.0, 100.0])
+                                 #1.0, 5.0, 10.0, 100.0, 1000.0, 10000.0, 100000.0])
+        
     elif model_type == "randomforest":
-        model_params = np.array([5, 10, 25, 50, 100])
+        #model_params = np.array([5, 10, 25, 50, 100])
+        model_params = np.array(est_param)
     
-    print(model_params)
-
-    #bestParam, error, berror = audioTrainTest.evaluate_regression(features, labels, n_exp, model_type, model_params)
-    bestParam, error, berror = evaluate_regression(features, labels, n_exp, model_type, svm_kernel, model_params, normalize=False, per_train=0.9)
+    #print(model_params)
+    print("Testing value: "+ label)
     print("Testing model: "+ model_type)
-    print("Best param:")
-    print(bestParam)
+    if model_type == "svm":
+        print("SVM kernel: " + svm_kernel)
+    #bestParam, error, berror = audioTrainTest.evaluate_regression(features, labels, n_exp, model_type, model_params)
+    bestParam, error, berror = evaluate_regression(features, labels, n_exp, model_type, svm_kernel, model_params, normalize, per_train=0.9)
+    
+    #print("Best param:")
+    #print(bestParam)
     print("Error:")
     print(error)
-    print("Best error:")
-    print (berror)
+    #print("Best error:")
+    #print (berror)
 
 "Override from audioTrainTest - with no normalization option, percentage of train, and different kernels"
-def evaluate_regression(features, labels, n_exp, method_name, svm_kernel, params, normalize=False, per_train=0.9):
+def evaluate_regression(features, labels, n_exp, method_name, svm_kernel, params, normalize=True, per_train=0.9):
     """
     ARGUMENTS:
         features:     np matrices of features [n_samples x numOfDimensions]
@@ -310,6 +320,16 @@ def evaluate_regression(features, labels, n_exp, method_name, svm_kernel, params
             print("\t\t best",end="")
         print("")
     return params[best_ind], errors_all[best_ind], er_base_all[best_ind]
+
+'''
+Function that estimates value based on the regression model
+    value: "valence" or "arousal"
+    model: trained regression model
+'''
+#def estimate_new(input_file, value="valence", model_name, model_type):
+    #audioTrainTest.file_regression(input_file, model_name, model_type)
+    #example aT.file_regression("anger1.wav", "data/modelssvmSpeechEmotion", "svm")
+    
 #bestParam = evaluate_regression(features, labels, n_exp, method_name, params):
     
 #train_models_song(csv_song)
@@ -317,6 +337,66 @@ def evaluate_regression(features, labels, n_exp, method_name, svm_kernel, params
 #train_models_frame(csv_frame)
 
 #evaluate(file=csv_song, n_exp=10)
-evaluate(file=csv_song, model_type='svm', svm_kernel = 'linear', n_exp=10, label='valence')
+'''
+Song-level evaluation
+'''
+'''
+Arousal
+'''
+#normalized
+#evaluate(file=csv_song, model_type='randomforest', svm_kernel = 'rbf', n_exp=10, label='arousal', normalize=True)
 
-#train_model(dataset="song", normalize = False, model = "svm", kernel='rbf', c_param=10, label="valence", est=50)
+#evaluate(file=csv_song, model_type='svm', svm_kernel = 'rbf', n_exp=10, label='arousal', normalize=True)
+
+#evaluate(file=csv_song, model_type='svm', svm_kernel = 'linear', n_exp=10, label='arousal', normalize=True)
+
+#evaluate(file=csv_song, model_type='svm', svm_kernel = 'poly', n_exp=10, label='arousal', normalize=True)
+
+#evaluate(file=csv_song, model_type='svm', svm_kernel = 'sigmoid', n_exp=10, label='arousal', normalize=True)
+
+#unnormalized
+#evaluate(file=csv_song, model_type='randomforest', svm_kernel = 'rbf', n_exp=10, label='arousal', normalize=False)
+
+#evaluate(file=csv_song, model_type='svm', svm_kernel = 'rbf', n_exp=10, label='arousal', normalize=False)
+
+#evaluate(file=csv_song, model_type='svm', svm_kernel = 'linear', n_exp=10, label='arousal', normalize=False)
+
+#evaluate(file=csv_song, model_type='svm', svm_kernel = 'poly', n_exp=10, label='arousal', normalize=False)
+
+#evaluate(file=csv_song, model_type='svm', svm_kernel = 'sigmoid', n_exp=10, label='arousal', normalize=False)
+
+
+'''
+Valence
+'''
+#normalized
+#evaluate(file=csv_song, model_type='randomforest', svm_kernel = 'rbf', n_exp=10, label='valence', normalize=True)
+
+#evaluate(file=csv_song, model_type='svm', svm_kernel = 'rbf', n_exp=10, label='valence', normalize=True)
+
+#evaluate(file=csv_song, model_type='svm', svm_kernel = 'linear', n_exp=10, label='valence', normalize=True)
+
+#evaluate(file=csv_song, model_type='svm', svm_kernel = 'poly', n_exp=10, label='valence', normalize=True)
+
+#evaluate(file=csv_song, model_type='svm', svm_kernel = 'sigmoid', n_exp=10, label='valence', normalize=True)
+
+#unormalized
+#evaluate(file=csv_song, model_type='randomforest', svm_kernel = 'rbf', n_exp=10, label='valence', normalize=False)
+
+#evaluate(file=csv_song, model_type='svm', svm_kernel = 'rbf', n_exp=10, label='valence', normalize=False)
+
+#evaluate(file=csv_song, model_type='svm', svm_kernel = 'linear', n_exp=10, label='valence', normalize=False)
+
+#evaluate(file=csv_song, model_type='svm', svm_kernel = 'poly', n_exp=10, label='valence', normalize=False)
+
+#evaluate(file=csv_song, model_type='svm', svm_kernel = 'sigmoid', n_exp=10, label='valence', normalize=False)
+
+'''
+Frame-level evaluation
+'''
+
+#evaluate(file=csv_frame, model_type='randomforest', svm_kernel = 'rbf', n_exp=5, label='valence', c_param = [0.1], est_param = [50])
+
+evaluate(file=csv_frame, model_type='randomforest', svm_kernel = 'rbf', n_exp=5, label='arousal', c_param = [0.1], est_param = [50])
+
+#train_model(dataset="frame", normalize = False, model = "svm", kernel='rbf', c_param=1.0, label="valence", est=50)

@@ -1,0 +1,6 @@
+Testing value: valence
+Testing model: randomforest
+Param       MSE     T-MSE       R-MSE
+50.0000     0.03        0.05        0.06         best
+Error:
+0.03297599180206073

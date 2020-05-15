@@ -1,0 +1,6 @@
+Testing value: arousal
+Testing model: randomforest
+Param       MSE     T-MSE       R-MSE
+50.0000     0.04        0.05        0.08         best
+Error:
+0.035573236110112524
