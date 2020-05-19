@@ -1,6 +1,48 @@
+n_exp=10
+Testing value: valence
+Testing model: randomforest
+Param       MSE     T-MSE       R-MSE
+50.0000     0.03        0.05        0.05         best
+Error:
+0.032679636181481224
+
+
+n_exp=5
 Testing value: valence
 Testing model: randomforest
 Param       MSE     T-MSE       R-MSE
 50.0000     0.03        0.05        0.06         best
 Error:
 0.03297599180206073
+
+Testing value: valence
+Testing model: randomforest
+Param       MSE     T-MSE       R-MSE
+25.0000     0.03        0.05        0.05         best
+Error:
+0.03340727534639582
+
+exp=1
+Testing value: valence
+Testing model: randomforest
+Param       MSE     T-MSE       R-MSE
+100.0000        0.03        0.05        0.06         best
+Error:
+0.03225945598901116
+
+n_exp=1
+Testing value: valence
+Testing model: svm
+SVM kernel: linear
+Param       MSE     T-MSE       R-MSE
+0.2500      0.05        0.17        0.06         best
+Error:
+0.04708938126575931
+
+Testing value: valence
+Testing model: svm
+SVM kernel: poly
+Param       MSE     T-MSE       R-MSE
+25.0000     0.05        0.17        0.06         best
+Error:
+0.04711637887446816

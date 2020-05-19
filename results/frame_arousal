@@ -1,6 +1,48 @@
+n_exp=10
+Testing value: arousal
+Testing model: randomforest
+Param       MSE     T-MSE       R-MSE
+50.0000     0.03        0.05        0.08         best
+Error:
+0.03482886517970589
+
+
+n_exp=5
 Testing value: arousal
 Testing model: randomforest
 Param       MSE     T-MSE       R-MSE
 50.0000     0.04        0.05        0.08         best
 Error:
 0.035573236110112524
+
+Testing value: arousal
+Testing model: randomforest
+Param       MSE     T-MSE       R-MSE
+25.0000     0.04        0.06        0.08         best
+Error:
+0.0359401643554617
+
+n_exp=1
+
+Testing value: arousal
+Testing model: randomforest
+Param       MSE     T-MSE       R-MSE
+100.0000        0.04        0.05        0.08         best
+Error:
+0.03512756170894017
+
+Testing value: arousal
+Testing model: svm
+SVM kernel: linear
+Param       MSE     T-MSE       R-MSE
+5.0000      0.05        0.17        0.08         best
+Error:
+0.049287983784595875
+
+Testing value: arousal
+Testing model: svm
+SVM kernel: rbf
+Param       MSE     T-MSE       R-MSE
+50.0000     0.05        0.16        0.08         best
+Error:
+0.04644695686204238

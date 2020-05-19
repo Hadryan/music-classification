@@ -395,8 +395,16 @@ Valence
 Frame-level evaluation
 '''
 
-#evaluate(file=csv_frame, model_type='randomforest', svm_kernel = 'rbf', n_exp=5, label='valence', c_param = [0.1], est_param = [50])
+#evaluate(file=csv_frame, model_type='randomforest', svm_kernel = 'rbf', n_exp=10, label='valence', c_param = [0.1], est_param = [50])
 
-evaluate(file=csv_frame, model_type='randomforest', svm_kernel = 'rbf', n_exp=5, label='arousal', c_param = [0.1], est_param = [50])
+evaluate(file=csv_frame, model_type='randomforest', svm_kernel = 'rbf', n_exp=10, label='arousal', c_param = [0.1], est_param = [50])
+
+#evaluate(file=csv_frame, model_type='svm', svm_kernel = 'linear', n_exp=1, label='arousal', c_param = [5], est_param = [50])
+
+#evaluate(file=csv_frame, model_type='svm', svm_kernel = 'linear', n_exp=1, label='valence', c_param = [0.25], est_param = [50])
+
+#evaluate(file=csv_frame, model_type='svm', svm_kernel = 'poly', n_exp=1, label='valence', c_param = [25], est_param = [50])
+
+#evaluate(file=csv_frame, model_type='svm', svm_kernel = 'rbf', n_exp=1, label='arousal', c_param = [50], est_param = [50])
 
 #train_model(dataset="frame", normalize = False, model = "svm", kernel='rbf', c_param=1.0, label="valence", est=50)
